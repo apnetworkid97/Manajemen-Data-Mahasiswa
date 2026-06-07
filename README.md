@@ -337,7 +337,7 @@ Catatan:
 - Refactor terbaru: form reset password dirapikan agar fungsi lebih pendek dan komentar fungsi dibuat spesifik (bukan komentar placeholder).
 - Frontend sudah diperbarui ke Next.js 16. Build menggunakan mode `--webpack` karena project masih memakai custom webpack config untuk SVG.
 
-## Siap Push ke GitHub
+## Catatan
 
 File yang sudah disiapkan agar enak dipresentasikan atau di-push:
 

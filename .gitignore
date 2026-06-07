@@ -3,5 +3,4 @@ frontend/.next/
 frontend/tsconfig.tsbuildinfo
 backend/node_modules/
 backend/.env
-backend/.env.example
-./git-push.txt
+git-push.txt
