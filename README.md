@@ -339,7 +339,7 @@ Catatan:
 
 ## Catatan
 
-File yang sudah disiapkan agar enak dipresentasikan atau di-push:
+File di-push:
 
 - `README.md` untuk overview project
 - `LAPORAN.md` untuk pemetaan requirement tugas
