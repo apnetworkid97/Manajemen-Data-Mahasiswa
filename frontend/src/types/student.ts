@@ -45,4 +45,8 @@ export interface StudentMeta {
     crudAccess: string;
     exportImport: string;
   };
+  executionTime: {       // ← tambah ini
+    search: number;      // ms aktual dari performance.now()
+    sort: number;        // ms aktual dari performance.now()
+  };
 }

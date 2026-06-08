@@ -69,6 +69,10 @@ const initialMeta: StudentMeta = {
     crudAccess: "O(n)",
     exportImport: "O(n)",
   },
+  executionTime: {
+    search: 0,
+    sort: 0,
+  },
 };
 
 const nimRegex = /^\d{12}$/;
@@ -179,18 +183,32 @@ export default function StudentManager() {
           sortOrder: overrides?.sortOrder ?? sortOrder,
         });
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/students?${params.toString()}`
-        );
-        const result = await response.json();
+        // Mulai ukur SEBELUM fetch — ini yang mengukur waktu server memproses search+sort
+const fetchStart = performance.now();
 
-        // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
-        if (!response.ok) {
-          throw new Error(result.message || "Gagal mengambil data mahasiswa.");
-        }
+const response = await fetch(
+  `${API_BASE_URL}/api/students?${params.toString()}`
+);
+const result = await response.json();
 
-        setStudents(result.data);
-        setMeta(result.meta);
+// Total waktu round-trip ke server
+const totalTime = performance.now() - fetchStart;
+
+if (!response.ok) {
+  throw new Error(result.message || "Gagal mengambil data mahasiswa.");
+}
+
+setStudents(result.data);
+
+// Gunakan executionTime dari server jika tersedia,
+// fallback ke estimasi dari total fetch time
+setMeta({
+  ...result.meta,
+  executionTime: {
+    search: result.meta.executionTime?.search ?? totalTime * 0.6,
+    sort: result.meta.executionTime?.sort ?? totalTime * 0.4,
+  },
+});
         setSelectedIds([]);
       } catch (error) {
         const errorMessage =

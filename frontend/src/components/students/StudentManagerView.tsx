@@ -79,6 +79,7 @@ interface StudentManagerViewProps {
   isPending: boolean;
   busyAction: BusyAction;
   meta: StudentMeta;
+  // estimateTimeMs: (complexity: string, n: number) => string;
   paginatedStudents: Student[];
   statusFilteredStudents: Student[];
   startIndex: number;
@@ -139,6 +140,42 @@ interface StudentManagerViewProps {
   handleImportSubmit: () => void;
   downloadImportTemplate: (format: "csv" | "json") => void;
 }
+//Fungsi Menghitung time complexity
+// function estimateTimeMs(complexity: string, n: number): number {
+//   const operationCost = 0.000001; // ms per operasi
+//   let operations = 0;
+
+//   switch (complexity) {
+//     case "O(1)":
+//       operations = 1;
+//       break;
+
+//     case "O(log n)":
+//       operations = Math.log2(n);
+//       break;
+
+//     case "O(n)":
+//       operations = n;
+//       break;
+
+//     case "O(n log n)":
+//       operations = n * Math.log2(n);
+//       break;
+
+//     case "O(n^2)":
+//       operations = n * n;
+//       break;
+
+//     case "O(n^3)":
+//       operations = n * n * n;
+//       break;
+
+//     default:
+//       return 0;
+//   }
+
+//   return operations * operationCost;
+// }
 
 // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
 export default function StudentManagerView({
@@ -220,7 +257,7 @@ export default function StudentManagerView({
     <div className="space-y-6">
       <TopLoadingBar isBusy={isBusy} />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <MetricCard
           title="Total Data Tampil"
           value={String(paginatedStudents.length)}
@@ -236,6 +273,11 @@ export default function StudentManagerView({
           value={`${meta.searchType} + ${meta.sortMethod}`}
           subtitle={`Kompleksitas: ${meta.complexity.search} dan ${meta.complexity.sort}`}
         />
+        <MetricCard
+  title="Estimasi Time Complexity"
+  value={`${meta.executionTime.search.toFixed(2)} ms`}
+  subtitle={`Search: ${meta.complexity.search} | Sort: ${meta.complexity.sort} (${meta.executionTime.sort.toFixed(2)} ms)`}
+/>
       </div>
 
       <div className="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-blue-light-700 dark:border-blue-light-500/30 dark:bg-blue-light-500/10 dark:text-blue-light-400">
