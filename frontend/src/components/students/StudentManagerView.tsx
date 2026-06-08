@@ -257,12 +257,12 @@ export default function StudentManagerView({
     <div className="space-y-6">
       <TopLoadingBar isBusy={isBusy} />
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <MetricCard
+      <div className="grid gap-4 md:grid-cols-3">
+        {/* <MetricCard
           title="Total Data Tampil"
           value={String(paginatedStudents.length)}
           subtitle="hasil yang terlihat di tabel"
-        />
+        /> */}
         <MetricCard
           title="Total Seluruh Data"
           value={String(meta.totalSemuaData)}
@@ -657,7 +657,7 @@ export default function StudentManagerView({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ComplexityBox
           title="Pencarian"
           value={meta.complexity.search}
@@ -678,7 +678,7 @@ export default function StudentManagerView({
           value={meta.complexity.exportImport}
           description="Proses file dibaca per elemen data."
         />
-      </div>
+      </div> */}
 
       <Modal isOpen={isModalOpen} onClose={closeModal} className="m-4 max-w-[760px]">
         <div className="p-6 sm:p-8">
