@@ -44,6 +44,7 @@ export interface StudentMeta {
   limit: number;
   totalPages: number;
   startIndex: number;
+  returnedRows: number;
   status: "all" | StudentStatus;
   searchType: SearchType;
   sortMethod: SortMethod;
@@ -55,8 +56,8 @@ export interface StudentMeta {
     crudAccess: string;
     exportImport: string;
   };
-  executionTime: {       // ← tambah ini
-    search: number;      // ms aktual dari performance.now()
-    sort: number;        // ms aktual dari performance.now()
+  executionTime: {
+    search: number;
+    sort: number;
   };
 }

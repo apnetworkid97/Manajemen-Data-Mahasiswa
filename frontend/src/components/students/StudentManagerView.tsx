@@ -260,30 +260,22 @@ export default function StudentManagerView({
       <TopLoadingBar isBusy={isBusy} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {/* <MetricCard
-          title="Total Data Tampil"
-          value={String(filteredTotal)}
-          subtitle="hasil yang terlihat di tabel"
-        /> */}
         <MetricCard
           title="Total Seluruh Data"
           value={String(meta.totalSemuaData)}
           subtitle="data yang tersimpan di file"
         />
         <MetricCard
-          title="Algoritma Aktif"
-          value={`${meta.searchType} + ${meta.sortMethod}`}
-          subtitle={`Kompleksitas: ${meta.complexity.search} dan ${meta.complexity.sort}`}
-        />
-        <MetricCard
-          title="Estimasi Time Complexity"
-          value={loadDurationLabel}
-          subtitle={
-            loading
-              ? "sedang memuat data..."
-              : "hasil request data terakhir"
-          }
-        />
+  title="Kompleksitas Search"
+  value={meta.complexity.search}
+  subtitle={`Execution: ${meta.executionTime.search.toFixed(2)} ms`}
+/>
+
+<MetricCard
+  title="Kompleksitas Sort"
+  value={meta.complexity.sort}
+  subtitle={`Execution: ${meta.executionTime.sort.toFixed(2)} ms`}
+/>
       </div>
 
       <div className="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-blue-light-700 dark:border-blue-light-500/30 dark:bg-blue-light-500/10 dark:text-blue-light-400">
@@ -387,7 +379,9 @@ export default function StudentManagerView({
               className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-800 outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
             >
               <option value="10">10</option>
-              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="200">200</option>
               <option value="-1">All</option>
             </select>
           </div>
@@ -455,11 +449,11 @@ export default function StudentManagerView({
                     value={sortMethod}
                     onChange={(value) => setSortMethod(value as SortMethod)}
                     options={[
+                      { value: "merge", label: "Merge" },
+                      { value: "shell", label: "Shell" },
                       { value: "insertion", label: "Insertion" },
                       { value: "bubble", label: "Bubble" },
                       { value: "selection", label: "Selection" },
-                      { value: "merge", label: "Merge" },
-                      { value: "shell", label: "Shell" },
                     ]}
                   />
                   <SelectField
@@ -1021,7 +1015,7 @@ function MetricCard({
   subtitle,
 }: {
   title: string;
-  value: string;
+  value: React.ReactNode;
   subtitle: string;
 }) {
   return (
@@ -1032,31 +1026,6 @@ function MetricCard({
       </p>
       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
         {subtitle}
-      </p>
-    </div>
-  );
-}
-
-// Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
-function ComplexityBox({
-  title,
-  value,
-  description,
-}: {
-  title: string;
-  value: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-      <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-        {title}
-      </p>
-      <p className="mt-2 text-lg font-semibold text-brand-600 dark:text-brand-400">
-        {value}
-      </p>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-        {description}
       </p>
     </div>
   );

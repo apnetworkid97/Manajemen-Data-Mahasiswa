@@ -19,7 +19,9 @@ Aplikasi web sederhana untuk mata kuliah Algoritma & Pemrograman 2. Project ini 
 - Menu `Registrasi User` (admin only) dengan datatable + modal tambah/edit user
 - CRUD data mahasiswa: input, edit, hapus, tampilkan
 - Datatable mahasiswa dengan server-side search, filter, sorting, dan pagination
-- Estimasi waktu muat data realtime pada dashboard Data Mahasiswa (`ms`, `s`, atau `menit`)
+- Jumlah row yang diterima tabel mengikuti request `Rows Per Page` dari server
+- Estimasi waktu muat data realtime pada Data Mahasiswa (`ms`, `s`, atau `menit`)
+- Request datatable terbaru diprioritaskan agar hasil request lama tidak menimpa tampilan
 - Modal input dan edit data mahasiswa
 - Edit data dengan klik baris tabel
 - Bulk delete dengan checkbox
@@ -131,6 +133,10 @@ Data mahasiswa pada tabel diproses secara server-side. Frontend mengirim paramet
 `search`, `searchType`, `sortBy`, `sortMethod`, `sortOrder`, `status`, `page`, dan
 `limit` ke endpoint `GET /api/students`. Backend mengembalikan data untuk halaman
 yang diminta beserta metadata pagination.
+
+Default sort menggunakan `Merge Sort` agar lebih stabil untuk data besar. Algoritma
+`Insertion`, `Bubble`, dan `Selection` tetap tersedia di filter sebagai pembanding
+kompleksitas, tetapi akan lebih lambat pada data ribuan karena `O(n^2)`.
 
 Dengan pemisahan ini, file logic dan file tampilan lebih mudah di-maintain.
 

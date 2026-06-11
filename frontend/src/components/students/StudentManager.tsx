@@ -62,14 +62,15 @@ const initialMeta: StudentMeta = {
   limit: 10,
   totalPages: 1,
   startIndex: 0,
+  returnedRows: 0,
   status: "all",
   searchType: "sequential",
-  sortMethod: "insertion",
+  sortMethod: "merge",
   sortBy: "nim",
   sortOrder: "asc",
   complexity: {
     search: "O(n)",
-    sort: "O(n^2)",
+    sort: "O(n log n)",
     crudAccess: "O(n)",
     exportImport: "O(n)",
   },
@@ -143,7 +144,7 @@ export default function StudentManager() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchType, setSearchType] = useState<SearchType>("sequential");
   const [sortBy, setSortBy] = useState<SortField>("nim");
-  const [sortMethod, setSortMethod] = useState<SortMethod>("insertion");
+  const [sortMethod, setSortMethod] = useState<SortMethod>("merge");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [loading, setLoading] = useState(false);
   const [busyAction, setBusyAction] = useState<BusyAction>(null);
@@ -163,6 +164,8 @@ export default function StudentManager() {
   const filterPanelRef = useRef<HTMLDivElement | null>(null);
   const exportPanelRef = useRef<HTMLDivElement | null>(null);
   const requestStartedAtRef = useRef(0);
+  const activeRequestIdRef = useRef(0);
+  const activeRequestControllerRef = useRef<AbortController | null>(null);
   const queryRef = useRef({
     search: debouncedSearch,
     searchType,
@@ -211,6 +214,12 @@ export default function StudentManager() {
   }, []);
 
   useEffect(() => {
+    return () => {
+      activeRequestControllerRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!loading) {
       return;
     }
@@ -226,12 +235,18 @@ export default function StudentManager() {
 
   const loadStudents = useCallback(
     async (overrides?: StudentQueryOverrides) => {
+      const query = { ...queryRef.current, ...overrides };
+      const requestId = activeRequestIdRef.current + 1;
+      const controller = new AbortController();
+
+      activeRequestIdRef.current = requestId;
+      activeRequestControllerRef.current?.abort();
+      activeRequestControllerRef.current = controller;
       requestStartedAtRef.current = performance.now();
       setLoadDurationMs(0);
       setLoading(true);
 
       try {
-        const query = { ...queryRef.current, ...overrides };
         const params = new URLSearchParams({
           search: query.search,
           searchType: query.searchType,
@@ -245,21 +260,33 @@ export default function StudentManager() {
 
         const response = await fetch(
           `${API_BASE_URL}/api/students?${params.toString()}`,
+          { signal: controller.signal },
         );
         const result = await response.json();
+
+        if (requestId !== activeRequestIdRef.current) {
+          return;
+        }
 
         setStudents(result.data);
         setMeta(result.meta);
         setCurrentPage(result.meta.page);
         setSelectedIds([]);
       } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
+        }
+
         const errorMessage =
           error instanceof Error ? error.message : "Terjadi kesalahan.";
         void showToast("error", "Gagal memuat data", errorMessage);
       } finally {
-        setLoadDurationMs(performance.now() - requestStartedAtRef.current);
-        setLoading(false);
-        setBusyAction(null);
+        if (requestId === activeRequestIdRef.current) {
+          setLoadDurationMs(performance.now() - requestStartedAtRef.current);
+          setLoading(false);
+          setBusyAction(null);
+          activeRequestControllerRef.current = null;
+        }
       }
     },
     [],
@@ -555,7 +582,7 @@ export default function StudentManager() {
     setSearch("");
     setSearchType("sequential");
     setSortBy("nim");
-    setSortMethod("insertion");
+    setSortMethod("merge");
     setSortOrder("asc");
     setStatusFilter("all");
     setRowsPerPage("10");
@@ -566,7 +593,7 @@ export default function StudentManager() {
         search: "",
         searchType: "sequential",
         sortBy: "nim",
-        sortMethod: "insertion",
+        sortMethod: "merge",
         sortOrder: "asc",
         status: "all",
         page: 1,

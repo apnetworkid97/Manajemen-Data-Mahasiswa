@@ -1,6 +1,7 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const { performance } = require("node:perf_hooks");
 const {
   bubbleSort,
   insertionSort,
@@ -224,7 +225,7 @@ class StudentService {
 
   // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
   applySort(students, sortBy, sortOrder, sortMethod) {
-    const sorter = SORTERS[sortMethod] || insertionSort;
+    const sorter = SORTERS[sortMethod] || mergeSort;
     return sorter(students, sortBy, sortOrder);
   }
 
@@ -255,7 +256,7 @@ class StudentService {
 
     return {
       search: searchComplexityMap[searchType] || "O(n)",
-      sort: sortComplexityMap[sortMethod] || "O(n^2)",
+      sort: sortComplexityMap[sortMethod] || "O(n log n)",
       crudAccess: "Akses array: O(1), pencarian item saat edit/hapus: O(n)",
       exportImport: "O(n)",
     };
@@ -266,7 +267,7 @@ class StudentService {
     const students = await this.readStudents();
     const sortBy = query.sortBy || "nim";
     const sortOrder = query.sortOrder === "desc" ? "desc" : "asc";
-    const sortMethod = query.sortMethod || "insertion";
+    const sortMethod = query.sortMethod || "merge";
     const searchType = query.searchType || "sequential";
     const search = String(query.search || "").trim();
     const status = String(query.status || "all");
@@ -274,9 +275,14 @@ class StudentService {
     const requestedLimit = Number.parseInt(query.limit, 10);
     const limit = requestedLimit === -1 ? -1 : Math.max(1, requestedLimit || 10);
 
+    const searchStartedAt = performance.now();
     const searched = this.applySearch(students, search, searchType);
+    const searchTime = performance.now() - searchStartedAt;
+
     const filtered = this.applyStatusFilter(searched, status);
+    const sortStartedAt = performance.now();
     const sorted = this.applySort(filtered, sortBy, sortOrder, sortMethod);
+    const sortTime = performance.now() - sortStartedAt;
     const total = sorted.length;
     const totalPages = limit === -1 ? 1 : Math.max(1, Math.ceil(total / limit));
     const page = Math.min(requestedPage, totalPages);
@@ -294,12 +300,17 @@ class StudentService {
         limit,
         totalPages,
         startIndex,
+        returnedRows: paginated.length,
         status,
         searchType,
         sortMethod,
         sortBy,
         sortOrder,
         complexity: this.getComplexity(searchType, sortMethod),
+        executionTime: {
+          search: searchTime,
+          sort: sortTime,
+        },
       },
     };
   }
