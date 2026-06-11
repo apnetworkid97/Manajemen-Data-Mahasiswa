@@ -266,16 +266,19 @@ export default function StudentManagerView({
           subtitle="data yang tersimpan di file"
         />
         <MetricCard
-  title="Kompleksitas Search"
-  value={meta.complexity.search}
-  subtitle={`Execution: ${meta.executionTime.search.toFixed(2)} ms`}
-/>
-
-<MetricCard
-  title="Kompleksitas Sort"
-  value={meta.complexity.sort}
-  subtitle={`Execution: ${meta.executionTime.sort.toFixed(2)} ms`}
-/>
+          title="Algoritma Aktif"
+          value={`${meta.searchType} + ${meta.sortMethod}`}
+          subtitle={`Kompleksitas: ${meta.complexity.search} dan ${meta.complexity.sort}`}
+        />
+        <MetricCard
+          title="Estimasi Waktu Eksekusi"
+          value={loading ? <Spinner /> : loadDurationLabel}
+          subtitle={
+            loading
+              ? "sedang memuat data..."
+              : "hasil request data terakhir"
+          }
+        />
       </div>
 
       <div className="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-blue-light-700 dark:border-blue-light-500/30 dark:bg-blue-light-500/10 dark:text-blue-light-400">
