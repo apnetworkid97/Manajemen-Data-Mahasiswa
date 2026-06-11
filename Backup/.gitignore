@@ -1,0 +1,6 @@
+frontend/node_modules/
+frontend/.next/
+frontend/tsconfig.tsbuildinfo
+backend/node_modules/
+backend/.env
+git-push.txt
