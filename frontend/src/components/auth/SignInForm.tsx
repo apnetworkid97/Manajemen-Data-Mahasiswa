@@ -88,12 +88,12 @@ export default function SignInForm() {
     <div className="flex w-full flex-1 flex-col lg:w-1/2">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] sm:p-8">
-          <div className="mb-6">
+          <div className="mb-6 text-center">
             <h1 className="mb-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
-              Login Manajemen Data Mahasiswa
+              Manajemen Data Mahasiswa
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Masukkan email dan password untuk masuk ke dashboard.
+              by Aditya Agus Prakoso (241011450333)
             </p>
           </div>
 
@@ -101,7 +101,9 @@ export default function SignInForm() {
             <p className="font-medium">Akun demo</p>
             <p>Email: admin@kampus.ac.id</p>
             <p>Password: admin123</p>
-            <p className="mt-2">Role lain tersedia: operator dan viewer.</p>
+            <p className="mt-2">Role lain tersedia: operator dan viewer, silahkan <Link href="/signup" className="font-medium text-brand-600 hover:text-brand-700">
+              daftar di sini!
+            </Link></p>
           </div>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
@@ -119,7 +121,7 @@ export default function SignInForm() {
                     email: "",
                   }));
                 }}
-                placeholder="admin@kampus.ac.id"
+                placeholder="Masukkan email"
                 className={`h-11 w-full rounded-xl border bg-white px-4 text-sm text-gray-800 outline-none transition dark:bg-gray-900 dark:text-white/90 ${
                   errors.email
                     ? "border-error-500 focus:border-error-500"
