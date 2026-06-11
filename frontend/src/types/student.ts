@@ -1,6 +1,11 @@
 export type StudentStatus = "Reguler" | "Beasiswa";
 export type SearchType = "linear" | "binary" | "sequential";
-export type SortMethod = "bubble" | "insertion" | "selection" | "merge" | "shell";
+export type SortMethod =
+  | "bubble"
+  | "insertion"
+  | "selection"
+  | "merge"
+  | "shell";
 export type SortField = "nim" | "nama" | "semester" | "angkatan" | "prodi";
 export type SortOrder = "asc" | "desc";
 
@@ -35,6 +40,11 @@ export interface StudentFormState {
 export interface StudentMeta {
   total: number;
   totalSemuaData: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  startIndex: number;
+  status: "all" | StudentStatus;
   searchType: SearchType;
   sortMethod: SortMethod;
   sortBy: SortField;

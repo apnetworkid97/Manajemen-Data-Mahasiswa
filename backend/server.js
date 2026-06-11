@@ -137,6 +137,9 @@ async function handleRequest(request, response) {
       sortBy: searchParams.get("sortBy") || "nim",
       sortOrder: searchParams.get("sortOrder") || "asc",
       sortMethod: searchParams.get("sortMethod") || "insertion",
+      status: searchParams.get("status") || "all",
+      page: searchParams.get("page") || "1",
+      limit: searchParams.get("limit") || "10",
     });
 
     sendJson(response, 200, { success: true, ...result });

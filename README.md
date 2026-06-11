@@ -18,7 +18,8 @@ Aplikasi web sederhana untuk mata kuliah Algoritma & Pemrograman 2. Project ini 
 - Beranda difungsikan sebagai dashboard ringkas (role aktif, total user, total mahasiswa, quick action)
 - Menu `Registrasi User` (admin only) dengan datatable + modal tambah/edit user
 - CRUD data mahasiswa: input, edit, hapus, tampilkan
-- Datatable mahasiswa dengan pagination
+- Datatable mahasiswa dengan server-side search, filter, sorting, dan pagination
+- Estimasi waktu muat data realtime pada dashboard Data Mahasiswa (`ms`, `s`, atau `menit`)
 - Modal input dan edit data mahasiswa
 - Edit data dengan klik baris tabel
 - Bulk delete dengan checkbox
@@ -122,9 +123,14 @@ Algoritma & Pemrograman 2/
 - `frontend/src/components/users/UserManager.tsx`
   - manajemen user berbasis datatable (tanpa import/export), khusus admin
 - `frontend/src/components/students/StudentManager.tsx`
-  - logic utama: state, fetch API, handler CRUD, import/export, filter, pagination
+  - logic utama: state, fetch API, handler CRUD, import/export, dan query server-side
 - `frontend/src/components/students/StudentManagerView.tsx`
   - tampilan utama: toolbar, tabel, modal form, modal import
+
+Data mahasiswa pada tabel diproses secara server-side. Frontend mengirim parameter
+`search`, `searchType`, `sortBy`, `sortMethod`, `sortOrder`, `status`, `page`, dan
+`limit` ke endpoint `GET /api/students`. Backend mengembalikan data untuk halaman
+yang diminta beserta metadata pagination.
 
 Dengan pemisahan ini, file logic dan file tampilan lebih mudah di-maintain.
 

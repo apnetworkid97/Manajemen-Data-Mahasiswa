@@ -1,7 +1,13 @@
 "use client";
 import { getCurrentSession } from "@/lib/auth";
 import type { UserRole } from "@/types/auth";
-import React, { useEffect, useRef, useCallback, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -63,12 +69,12 @@ const AppSidebar: React.FC = () => {
             },
           ]
         : baseNavItems,
-    [currentRole]
+    [currentRole],
   );
 
   const renderMenuItems = (
     navItems: NavItem[],
-    menuType: "main" | "support" | "others"
+    menuType: "main" | "support" | "others",
   ) => (
     <ul className="flex flex-col gap-4">
       {navItems.map((nav, index) => (
@@ -197,7 +203,7 @@ const AppSidebar: React.FC = () => {
     index: number;
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
-    {}
+    {},
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -213,8 +219,8 @@ const AppSidebar: React.FC = () => {
         menuType === "main"
           ? navItems
           : menuType === "support"
-          ? supportItems
-          : othersItems;
+            ? supportItems
+            : othersItems;
       items.forEach((nav, index) => {
         // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
         if (nav.subItems) {
@@ -253,7 +259,7 @@ const AppSidebar: React.FC = () => {
 
   const handleSubmenuToggle = (
     index: number,
-    menuType: "main" | "support" | "others"
+    menuType: "main" | "support" | "others",
   ) => {
     setOpenSubmenu((prevOpenSubmenu) => {
       if (
@@ -274,8 +280,8 @@ const AppSidebar: React.FC = () => {
           isExpanded || isMobileOpen
             ? "w-[290px]"
             : isHovered
-            ? "w-[290px]"
-            : "w-[90px]"
+              ? "w-[290px]"
+              : "w-[90px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
@@ -296,6 +302,7 @@ const AppSidebar: React.FC = () => {
                 alt="Logo"
                 width={150}
                 height={40}
+                loading="eager"
                 style={{ width: "150px", height: "auto" }}
               />
               <Image
@@ -304,6 +311,7 @@ const AppSidebar: React.FC = () => {
                 alt="Logo"
                 width={150}
                 height={40}
+                loading="eager"
                 style={{ width: "150px", height: "auto" }}
               />
             </>

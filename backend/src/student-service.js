@@ -228,6 +228,15 @@ class StudentService {
     return sorter(students, sortBy, sortOrder);
   }
 
+  // Menyaring mahasiswa berdasarkan status Reguler atau Beasiswa.
+  applyStatusFilter(students, status) {
+    if (!["Reguler", "Beasiswa"].includes(status)) {
+      return students;
+    }
+
+    return students.filter((student) => student.status === status);
+  }
+
   // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
   getComplexity(searchType, sortMethod) {
     const searchComplexityMap = {
@@ -260,15 +269,32 @@ class StudentService {
     const sortMethod = query.sortMethod || "insertion";
     const searchType = query.searchType || "sequential";
     const search = String(query.search || "").trim();
+    const status = String(query.status || "all");
+    const requestedPage = Math.max(1, Number.parseInt(query.page, 10) || 1);
+    const requestedLimit = Number.parseInt(query.limit, 10);
+    const limit = requestedLimit === -1 ? -1 : Math.max(1, requestedLimit || 10);
 
     const searched = this.applySearch(students, search, searchType);
-    const sorted = this.applySort(searched, sortBy, sortOrder, sortMethod);
+    const filtered = this.applyStatusFilter(searched, status);
+    const sorted = this.applySort(filtered, sortBy, sortOrder, sortMethod);
+    const total = sorted.length;
+    const totalPages = limit === -1 ? 1 : Math.max(1, Math.ceil(total / limit));
+    const page = Math.min(requestedPage, totalPages);
+    const startIndex = limit === -1 ? 0 : (page - 1) * limit;
+    const paginated = limit === -1
+      ? sorted
+      : sorted.slice(startIndex, startIndex + limit);
 
     return {
-      data: sorted,
+      data: paginated,
       meta: {
-        total: sorted.length,
+        total,
         totalSemuaData: students.length,
+        page,
+        limit,
+        totalPages,
+        startIndex,
+        status,
         searchType,
         sortMethod,
         sortBy,

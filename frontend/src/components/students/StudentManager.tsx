@@ -3,7 +3,6 @@
 import React, {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   useTransition,
@@ -59,6 +58,11 @@ const initialFormState: StudentFormState = {
 const initialMeta: StudentMeta = {
   total: 0,
   totalSemuaData: 0,
+  page: 1,
+  limit: 10,
+  totalPages: 1,
+  startIndex: 0,
+  status: "all",
   searchType: "sequential",
   sortMethod: "insertion",
   sortBy: "nim",
@@ -79,6 +83,16 @@ const tempatLahirRegex = /^[A-Za-z\s'.-]{2,60}$/;
 type ModalMode = "create" | "edit";
 type FormErrors = Partial<Record<keyof StudentFormState, string>>;
 type StatusFilter = "all" | "Reguler" | "Beasiswa";
+type StudentQueryOverrides = Partial<{
+  search: string;
+  searchType: SearchType;
+  sortBy: SortField;
+  sortMethod: SortMethod;
+  sortOrder: SortOrder;
+  status: StatusFilter;
+  page: number;
+  limit: string;
+}>;
 type BusyAction =
   | null
   | "submit"
@@ -98,7 +112,7 @@ async function readFileAsText(file: File) {
 function showToast(
   icon: "success" | "error" | "info",
   title: string,
-  text?: string
+  text?: string,
 ) {
   return Swal.fire({
     toast: true,
@@ -117,6 +131,7 @@ export default function StudentManager() {
   const [currentRole, setCurrentRole] = useState<UserRole>("viewer");
   const [students, setStudents] = useState<Student[]>([]);
   const [meta, setMeta] = useState<StudentMeta>(initialMeta);
+  const [loadDurationMs, setLoadDurationMs] = useState(0);
   const [form, setForm] = useState<StudentFormState>(initialFormState);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -143,12 +158,45 @@ export default function StudentManager() {
 
   const filterPanelRef = useRef<HTMLDivElement | null>(null);
   const exportPanelRef = useRef<HTMLDivElement | null>(null);
+  const requestStartedAtRef = useRef(0);
+  const queryRef = useRef({
+    search: debouncedSearch,
+    searchType,
+    sortBy,
+    sortMethod,
+    sortOrder,
+    status: statusFilter,
+    page: currentPage,
+    limit: rowsPerPage,
+  });
   const isBusy = loading || isPending || busyAction !== null;
   const canCreate = hasPermission(currentRole, "create_student");
   const canEdit = hasPermission(currentRole, "edit_student");
   const canDelete = hasPermission(currentRole, "delete_student");
   const canImport = hasPermission(currentRole, "import_student");
   const canExport = hasPermission(currentRole, "export_student");
+
+  useEffect(() => {
+    queryRef.current = {
+      search: debouncedSearch,
+      searchType,
+      sortBy,
+      sortMethod,
+      sortOrder,
+      status: statusFilter,
+      page: currentPage,
+      limit: rowsPerPage,
+    };
+  }, [
+    currentPage,
+    debouncedSearch,
+    rowsPerPage,
+    searchType,
+    sortBy,
+    sortMethod,
+    sortOrder,
+    statusFilter,
+  ]);
 
   useEffect(() => {
     const currentSession = getCurrentSession();
@@ -158,29 +206,41 @@ export default function StudentManager() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!loading) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setLoadDurationMs(performance.now() - requestStartedAtRef.current);
+    }, 60);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [loading]);
+
   const loadStudents = useCallback(
-    async (
-      overrides?: Partial<{
-        search: string;
-        searchType: SearchType;
-        sortBy: SortField;
-        sortMethod: SortMethod;
-        sortOrder: SortOrder;
-      }>
-    ) => {
+    async (overrides?: StudentQueryOverrides) => {
+      requestStartedAtRef.current = performance.now();
+      setLoadDurationMs(0);
       setLoading(true);
 
       try {
+        const query = { ...queryRef.current, ...overrides };
         const params = new URLSearchParams({
-          search: overrides?.search ?? debouncedSearch,
-          searchType: overrides?.searchType ?? searchType,
-          sortBy: overrides?.sortBy ?? sortBy,
-          sortMethod: overrides?.sortMethod ?? sortMethod,
-          sortOrder: overrides?.sortOrder ?? sortOrder,
+          search: query.search,
+          searchType: query.searchType,
+          sortBy: query.sortBy,
+          sortMethod: query.sortMethod,
+          sortOrder: query.sortOrder,
+          status: query.status,
+          page: String(query.page),
+          limit: query.limit,
         });
 
         const response = await fetch(
-          `${API_BASE_URL}/api/students?${params.toString()}`
+          `${API_BASE_URL}/api/students?${params.toString()}`,
         );
         const result = await response.json();
 
@@ -191,17 +251,19 @@ export default function StudentManager() {
 
         setStudents(result.data);
         setMeta(result.meta);
+        setCurrentPage(result.meta.page);
         setSelectedIds([]);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Terjadi kesalahan.";
         void showToast("error", "Gagal memuat data", errorMessage);
       } finally {
+        setLoadDurationMs(performance.now() - requestStartedAtRef.current);
         setLoading(false);
         setBusyAction(null);
       }
     },
-    [debouncedSearch, searchType, sortBy, sortMethod, sortOrder]
+    [],
   );
 
   useEffect(() => {
@@ -217,7 +279,7 @@ export default function StudentManager() {
   useEffect(() => {
     setBusyAction((previous) => previous ?? "search");
     startTransition(() => {
-      void loadStudents({ search: debouncedSearch });
+      void loadStudents({ search: debouncedSearch, page: 1 });
     });
     setCurrentPage(1);
   }, [debouncedSearch, loadStudents, startTransition]);
@@ -253,7 +315,7 @@ export default function StudentManager() {
   // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
   function updateFormValue(
     key: keyof StudentFormState,
-    value: string | StudentStatus
+    value: string | StudentStatus,
   ) {
     setForm((previous) => ({
       ...previous,
@@ -312,7 +374,11 @@ export default function StudentManager() {
   function openCreateModal() {
     // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
     if (!canCreate) {
-      void showToast("error", "Akses ditolak", "Role Anda tidak dapat menambah data.");
+      void showToast(
+        "error",
+        "Akses ditolak",
+        "Role Anda tidak dapat menambah data.",
+      );
       return;
     }
 
@@ -361,8 +427,15 @@ export default function StudentManager() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if ((modalMode === "create" && !canCreate) || (modalMode === "edit" && !canEdit)) {
-      void showToast("error", "Akses ditolak", "Role Anda tidak dapat menyimpan data.");
+    if (
+      (modalMode === "create" && !canCreate) ||
+      (modalMode === "edit" && !canEdit)
+    ) {
+      void showToast(
+        "error",
+        "Akses ditolak",
+        "Role Anda tidak dapat menyimpan data.",
+      );
       return;
     }
 
@@ -373,7 +446,7 @@ export default function StudentManager() {
       void showToast(
         "error",
         "Validasi gagal",
-        "Cek kembali field form yang berwarna merah."
+        "Cek kembali field form yang berwarna merah.",
       );
       return;
     }
@@ -421,7 +494,11 @@ export default function StudentManager() {
   async function handleDeleteSelected() {
     // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
     if (!canDelete) {
-      void showToast("error", "Akses ditolak", "Role Anda tidak dapat menghapus data.");
+      void showToast(
+        "error",
+        "Akses ditolak",
+        "Role Anda tidak dapat menghapus data.",
+      );
       return;
     }
 
@@ -484,6 +561,19 @@ export default function StudentManager() {
     setStatusFilter("all");
     setRowsPerPage("10");
     setCurrentPage(1);
+    setBusyAction("filter");
+    startTransition(() => {
+      void loadStudents({
+        search: "",
+        searchType: "sequential",
+        sortBy: "nim",
+        sortMethod: "insertion",
+        sortOrder: "asc",
+        status: "all",
+        page: 1,
+        limit: "10",
+      });
+    });
     void showToast("info", "Filter direset");
     setIsFilterOpen(false);
   }
@@ -493,7 +583,16 @@ export default function StudentManager() {
     setBusyAction("filter");
     setCurrentPage(1);
     startTransition(() => {
-      void loadStudents();
+      void loadStudents({
+        search: debouncedSearch,
+        searchType,
+        sortBy,
+        sortMethod,
+        sortOrder,
+        status: statusFilter,
+        page: 1,
+        limit: rowsPerPage,
+      });
     });
     setIsFilterOpen(false);
   }
@@ -502,7 +601,11 @@ export default function StudentManager() {
   async function handleImportSubmit() {
     // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
     if (!canImport) {
-      void showToast("error", "Akses ditolak", "Role Anda tidak dapat import data.");
+      void showToast(
+        "error",
+        "Akses ditolak",
+        "Role Anda tidak dapat import data.",
+      );
       return;
     }
 
@@ -515,7 +618,11 @@ export default function StudentManager() {
     const extension = importFile.name.split(".").pop()?.toLowerCase();
     // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
     if (extension !== "csv" && extension !== "json") {
-      void showToast("error", "Format file tidak valid", "Gunakan file CSV atau JSON.");
+      void showToast(
+        "error",
+        "Format file tidak valid",
+        "Gunakan file CSV atau JSON.",
+      );
       return;
     }
 
@@ -558,13 +665,20 @@ export default function StudentManager() {
   async function handleExport(format: "csv" | "json") {
     // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
     if (!canExport) {
-      void showToast("error", "Akses ditolak", "Role Anda tidak dapat export data.");
+      void showToast(
+        "error",
+        "Akses ditolak",
+        "Role Anda tidak dapat export data.",
+      );
       return;
     }
 
     setBusyAction("export");
     setIsExportOpen(false);
-    window.open(`${API_BASE_URL}/api/students/export?format=${format}`, "_blank");
+    window.open(
+      `${API_BASE_URL}/api/students/export?format=${format}`,
+      "_blank",
+    );
     window.setTimeout(() => {
       setBusyAction(null);
     }, 500);
@@ -588,7 +702,7 @@ export default function StudentManager() {
         },
       ],
       null,
-      2
+      2,
     );
 
     const csvTemplate = [
@@ -612,33 +726,34 @@ export default function StudentManager() {
     URL.revokeObjectURL(url);
   }
 
-  const statusFilteredStudents = useMemo(() => {
-    return statusFilter === "all"
-      ? students
-      : students.filter((student) => student.status === statusFilter);
-  }, [statusFilter, students]);
+  const paginatedStudents = students;
+  const totalPages = meta.totalPages;
+  const safeCurrentPage = meta.page;
+  const startIndex = meta.startIndex;
 
-  const isShowAllRows = rowsPerPage === "-1";
-  const rowsPerPageNumber = Number(rowsPerPage);
-  const totalPages = Math.max(
-    1,
-    isShowAllRows
-      ? 1
-      : Math.ceil(statusFilteredStudents.length / rowsPerPageNumber)
-  );
-
-  const safeCurrentPage = Math.min(currentPage, totalPages);
-  const startIndex = isShowAllRows ? 0 : (safeCurrentPage - 1) * rowsPerPageNumber;
-  const paginatedStudents = isShowAllRows
-    ? statusFilteredStudents
-    : statusFilteredStudents.slice(
-        startIndex,
-        startIndex + rowsPerPageNumber
-      );
-
-  useEffect(() => {
+  // Mengambil ulang data dari server ketika jumlah baris per halaman diubah.
+  function handleRowsPerPageChange(value: string) {
+    setRowsPerPage(value);
     setCurrentPage(1);
-  }, [rowsPerPage, statusFilter]);
+    setBusyAction("filter");
+    void loadStudents({ limit: value, page: 1 });
+  }
+
+  // Mengambil ulang data dari server ketika filter status mahasiswa diubah.
+  function handleStatusFilterChange(value: StatusFilter) {
+    setStatusFilter(value);
+    setCurrentPage(1);
+    setBusyAction("filter");
+    void loadStudents({ status: value, page: 1 });
+  }
+
+  // Meminta halaman tertentu ke server tanpa memotong array di browser.
+  function handlePageChange(page: number) {
+    const nextPage = Math.min(Math.max(1, page), totalPages);
+    setCurrentPage(nextPage);
+    setBusyAction("filter");
+    void loadStudents({ page: nextPage });
+  }
 
   const isAllVisibleSelected =
     paginatedStudents.length > 0 &&
@@ -649,20 +764,27 @@ export default function StudentManager() {
     // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
     if (!checked) {
       setSelectedIds((previous) =>
-        previous.filter((id) => !paginatedStudents.some((student) => student.id === id))
+        previous.filter(
+          (id) => !paginatedStudents.some((student) => student.id === id),
+        ),
       );
       return;
     }
 
     setSelectedIds((previous) => [
-      ...new Set([...previous, ...paginatedStudents.map((student) => student.id)]),
+      ...new Set([
+        ...previous,
+        ...paginatedStudents.map((student) => student.id),
+      ]),
     ]);
   }
 
   // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
   function toggleSelectOne(id: string, checked: boolean) {
     setSelectedIds((previous) =>
-      checked ? [...new Set([...previous, id])] : previous.filter((item) => item !== id)
+      checked
+        ? [...new Set([...previous, id])]
+        : previous.filter((item) => item !== id),
     );
   }
 
@@ -673,11 +795,12 @@ export default function StudentManager() {
       isPending={isPending}
       busyAction={busyAction}
       meta={meta}
+      loadDurationMs={loadDurationMs}
       paginatedStudents={paginatedStudents}
-      statusFilteredStudents={statusFilteredStudents}
+      filteredTotal={meta.total}
       startIndex={startIndex}
       rowsPerPage={rowsPerPage}
-      setRowsPerPage={setRowsPerPage}
+      onRowsPerPageChange={handleRowsPerPageChange}
       selectedFileName={selectedFileName}
       currentRole={currentRole}
       canCreate={canCreate}
@@ -702,7 +825,7 @@ export default function StudentManager() {
       sortOrder={sortOrder}
       setSortOrder={setSortOrder}
       statusFilter={statusFilter}
-      setStatusFilter={setStatusFilter}
+      onStatusFilterChange={handleStatusFilterChange}
       selectedIds={selectedIds}
       isAllVisibleSelected={isAllVisibleSelected}
       toggleSelectAll={toggleSelectAll}
@@ -715,7 +838,7 @@ export default function StudentManager() {
       runFilter={runFilter}
       totalPages={totalPages}
       safeCurrentPage={safeCurrentPage}
-      setCurrentPage={setCurrentPage}
+      onPageChange={handlePageChange}
       isModalOpen={isModalOpen}
       closeModal={closeModal}
       modalMode={modalMode}

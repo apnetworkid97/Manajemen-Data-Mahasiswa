@@ -79,11 +79,12 @@ interface StudentManagerViewProps {
   isPending: boolean;
   busyAction: BusyAction;
   meta: StudentMeta;
+  loadDurationMs: number;
   paginatedStudents: Student[];
-  statusFilteredStudents: Student[];
+  filteredTotal: number;
   startIndex: number;
   rowsPerPage: string;
-  setRowsPerPage: (value: string) => void;
+  onRowsPerPageChange: (value: string) => void;
   selectedFileName: string;
   currentRole: UserRole;
   canCreate: boolean;
@@ -108,7 +109,7 @@ interface StudentManagerViewProps {
   sortOrder: SortOrder;
   setSortOrder: (value: SortOrder) => void;
   statusFilter: StatusFilter;
-  setStatusFilter: (value: StatusFilter) => void;
+  onStatusFilterChange: (value: StatusFilter) => void;
   selectedIds: string[];
   isAllVisibleSelected: boolean;
   toggleSelectAll: (checked: boolean) => void;
@@ -121,7 +122,7 @@ interface StudentManagerViewProps {
   runFilter: () => void;
   totalPages: number;
   safeCurrentPage: number;
-  setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
+  onPageChange: (page: number) => void;
   isModalOpen: boolean;
   closeModal: () => void;
   modalMode: ModalMode;
@@ -130,7 +131,7 @@ interface StudentManagerViewProps {
   formErrors: FormErrors;
   updateFormValue: (
     key: keyof StudentFormState,
-    value: string | StudentStatus
+    value: string | StudentStatus,
   ) => void;
   isImportModalOpen: boolean;
   setIsImportModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -147,11 +148,12 @@ export default function StudentManagerView({
   isPending,
   busyAction,
   meta,
+  loadDurationMs,
   paginatedStudents,
-  statusFilteredStudents,
+  filteredTotal,
   startIndex,
   rowsPerPage,
-  setRowsPerPage,
+  onRowsPerPageChange,
   selectedFileName,
   currentRole,
   canCreate,
@@ -176,7 +178,7 @@ export default function StudentManagerView({
   sortOrder,
   setSortOrder,
   statusFilter,
-  setStatusFilter,
+  onStatusFilterChange,
   selectedIds,
   isAllVisibleSelected,
   toggleSelectAll,
@@ -189,7 +191,7 @@ export default function StudentManagerView({
   runFilter,
   totalPages,
   safeCurrentPage,
-  setCurrentPage,
+  onPageChange,
   isModalOpen,
   closeModal,
   modalMode,
@@ -205,10 +207,11 @@ export default function StudentManagerView({
   downloadImportTemplate,
 }: StudentManagerViewProps) {
   const visiblePages = getVisiblePages(safeCurrentPage, totalPages);
-  const isShowAllRows = rowsPerPage === "-1";
-  const visibleRowEnd = isShowAllRows
-    ? statusFilteredStudents.length
-    : Math.min(startIndex + Number(rowsPerPage), statusFilteredStudents.length);
+  const visibleRowEnd = Math.min(
+    startIndex + paginatedStudents.length,
+    filteredTotal,
+  );
+  const loadDurationLabel = formatLoadDuration(loadDurationMs);
   const roleDescription =
     currentRole === "admin"
       ? "Admin: akses penuh termasuk registrasi user dan seluruh data mahasiswa."
@@ -220,12 +223,12 @@ export default function StudentManagerView({
     <div className="space-y-6">
       <TopLoadingBar isBusy={isBusy} />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {/* <MetricCard
           title="Total Data Tampil"
-          value={String(paginatedStudents.length)}
+          value={String(filteredTotal)}
           subtitle="hasil yang terlihat di tabel"
-        />
+        /> */}
         <MetricCard
           title="Total Seluruh Data"
           value={String(meta.totalSemuaData)}
@@ -236,10 +239,20 @@ export default function StudentManagerView({
           value={`${meta.searchType} + ${meta.sortMethod}`}
           subtitle={`Kompleksitas: ${meta.complexity.search} dan ${meta.complexity.sort}`}
         />
+        <MetricCard
+          title="Estimasi Time Complexity"
+          value={loadDurationLabel}
+          subtitle={
+            loading
+              ? "sedang memuat data..."
+              : "hasil request data terakhir"
+          }
+        />
       </div>
 
       <div className="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-blue-light-700 dark:border-blue-light-500/30 dark:bg-blue-light-500/10 dark:text-blue-light-400">
-        Role aktif: <span className="font-semibold capitalize">{currentRole}</span>.{" "}
+        Role aktif:{" "}
+        <span className="font-semibold capitalize">{currentRole}</span>.{" "}
         {roleDescription}
       </div>
 
@@ -322,7 +335,7 @@ export default function StudentManagerView({
                     ? "bg-brand-500 text-white"
                     : "text-gray-600 dark:text-gray-300"
                 }`}
-                onClick={() => setStatusFilter(item)}
+                onClick={() => onStatusFilterChange(item)}
               >
                 {item === "all" ? "All" : item}
               </button>
@@ -334,7 +347,7 @@ export default function StudentManagerView({
           <div className="w-[96px]">
             <select
               value={rowsPerPage}
-              onChange={(event) => setRowsPerPage(event.target.value)}
+              onChange={(event) => onRowsPerPageChange(event.target.value)}
               className="h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-800 outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
             >
               <option value="10">10</option>
@@ -370,7 +383,9 @@ export default function StudentManagerView({
                   <SelectField
                     label="Status"
                     value={statusFilter}
-                    onChange={(value) => setStatusFilter(value as StatusFilter)}
+                    onChange={(value) =>
+                      onStatusFilterChange(value as StatusFilter)
+                    }
                     options={[
                       { value: "all", label: "All" },
                       { value: "Reguler", label: "Reguler" },
@@ -466,24 +481,26 @@ export default function StudentManagerView({
                     "Semester",
                     "Status",
                     "Status Aktif",
-                  ].map(
-                    (heading) => (
-                      <TableCell
-                        key={heading}
-                        isHeader
-                        className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-                      >
-                        {heading}
-                      </TableCell>
-                    )
-                  )}
+                  ].map((heading) => (
+                    <TableCell
+                      key={heading}
+                      isHeader
+                      className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
+                    >
+                      {heading}
+                    </TableCell>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
                 {paginatedStudents.length === 0 ? (
                   <TableRow>
-                    <TableCell className="px-5 py-8 text-sm text-gray-500" colSpan={canDelete ? 8 : 7}>
-                      Tidak ada data mahasiswa yang cocok dengan filter saat ini.
+                    <TableCell
+                      className="px-5 py-8 text-sm text-gray-500"
+                      colSpan={canDelete ? 8 : 7}
+                    >
+                      Tidak ada data mahasiswa yang cocok dengan filter saat
+                      ini.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -491,18 +508,22 @@ export default function StudentManagerView({
                     <TableRow
                       key={student.id}
                       className={`${canEdit ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.02]" : ""} transition`}
-                      onClick={canEdit ? () => openEditModal(student) : undefined}
+                      onClick={
+                        canEdit ? () => openEditModal(student) : undefined
+                      }
                     >
                       {canDelete ? (
                         <TableCell
                           className="px-4 py-5"
-                          onClick={(event: React.MouseEvent<HTMLTableCellElement>) =>
-                            event.stopPropagation()
-                          }
+                          onClick={(
+                            event: React.MouseEvent<HTMLTableCellElement>,
+                          ) => event.stopPropagation()}
                         >
                           <Checkbox
                             checked={selectedIds.includes(student.id)}
-                            onChange={(checked) => toggleSelectOne(student.id, checked)}
+                            onChange={(checked) =>
+                              toggleSelectOne(student.id, checked)
+                            }
                           />
                         </TableCell>
                       ) : null}
@@ -512,7 +533,9 @@ export default function StudentManagerView({
                       <TableCell className="px-4 py-5 text-sm text-gray-700 dark:text-gray-200">
                         <div>
                           <p className="font-medium">{student.nama}</p>
-                          <p className="mt-1 text-xs text-gray-500">{student.email}</p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {student.email}
+                          </p>
                         </div>
                       </TableCell>
                       <TableCell className="px-4 py-5 text-sm text-gray-700 dark:text-gray-200">
@@ -527,7 +550,11 @@ export default function StudentManagerView({
                       <TableCell className="px-4 py-5 text-sm">
                         <Badge
                           size="sm"
-                          color={student.status === "Beasiswa" ? "warning" : "success"}
+                          color={
+                            student.status === "Beasiswa"
+                              ? "warning"
+                              : "success"
+                          }
                         >
                           {student.status}
                         </Badge>
@@ -535,7 +562,11 @@ export default function StudentManagerView({
                       <TableCell className="px-4 py-5 text-sm">
                         <Badge
                           size="sm"
-                          color={student.statusAktif === "Aktif" ? "success" : "error"}
+                          color={
+                            student.statusAktif === "Aktif"
+                              ? "success"
+                              : "error"
+                          }
                         >
                           {student.statusAktif}
                         </Badge>
@@ -553,7 +584,7 @@ export default function StudentManagerView({
             <span className="flex flex-wrap items-center gap-3">
               {loading || isPending
                 ? "Memuat data..."
-                : `Showing ${statusFilteredStudents.length === 0 ? 0 : startIndex + 1} to ${visibleRowEnd} of ${statusFilteredStudents.length}`}
+                : `Showing ${filteredTotal === 0 ? 0 : startIndex + 1} to ${visibleRowEnd} of ${filteredTotal}`}
               {selectedFileName ? (
                 <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 dark:bg-white/[0.05] dark:text-gray-300">
                   Import terakhir: {selectedFileName}
@@ -561,7 +592,8 @@ export default function StudentManagerView({
               ) : null}
             </span>
             <span>
-              Search: {meta.searchType} | Sort: {meta.sortMethod} ({meta.sortOrder})
+              Search: {meta.searchType} | Sort: {meta.sortMethod} (
+              {meta.sortOrder})
             </span>
           </div>
 
@@ -571,7 +603,7 @@ export default function StudentManagerView({
                 type="button"
                 disabled={safeCurrentPage === 1}
                 className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
-                onClick={() => setCurrentPage((previous) => Math.max(1, previous - 1))}
+                onClick={() => onPageChange(safeCurrentPage - 1)}
               >
                 Previous
               </button>
@@ -593,20 +625,18 @@ export default function StudentManagerView({
                         ? "bg-brand-500 text-white"
                         : "border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-white/5"
                     }`}
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => onPageChange(page)}
                   >
                     {page}
                   </button>
-                )
+                ),
               )}
 
               <button
                 type="button"
                 disabled={safeCurrentPage === totalPages}
                 className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
-                onClick={() =>
-                  setCurrentPage((previous) => Math.min(totalPages, previous + 1))
-                }
+                onClick={() => onPageChange(safeCurrentPage + 1)}
               >
                 Next
               </button>
@@ -638,11 +668,17 @@ export default function StudentManagerView({
         />
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={closeModal} className="m-4 max-w-[760px]">
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        className="m-4 max-w-[760px]"
+      >
         <div className="p-6 sm:p-8">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-              {modalMode === "edit" ? "Edit Data Mahasiswa" : "Input Data Mahasiswa"}
+              {modalMode === "edit"
+                ? "Edit Data Mahasiswa"
+                : "Input Data Mahasiswa"}
             </h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Semua field wajib diisi dengan format yang benar.
@@ -712,7 +748,9 @@ export default function StudentManagerView({
             <SelectField
               label="Status Mahasiswa"
               value={form.status}
-              onChange={(value) => updateFormValue("status", value as StudentStatus)}
+              onChange={(value) =>
+                updateFormValue("status", value as StudentStatus)
+              }
               options={[
                 { value: "Reguler", label: "Reguler" },
                 { value: "Beasiswa", label: "Beasiswa" },
@@ -799,7 +837,9 @@ export default function StudentManagerView({
                 className="block w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-brand-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
               />
               {importFile ? (
-                <p className="text-xs text-gray-500">File dipilih: {importFile.name}</p>
+                <p className="text-xs text-gray-500">
+                  File dipilih: {importFile.name}
+                </p>
               ) : null}
             </div>
 
@@ -849,10 +889,25 @@ function getVisiblePages(currentPage: number, totalPages: number) {
 
   // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
   if (currentPage >= totalPages - 2) {
-    return [1, "ellipsis-left", totalPages - 3, totalPages - 2, totalPages - 1, totalPages] as const;
+    return [
+      1,
+      "ellipsis-left",
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ] as const;
   }
 
-  return [1, "ellipsis-left", currentPage - 1, currentPage, currentPage + 1, "ellipsis-right", totalPages] as const;
+  return [
+    1,
+    "ellipsis-left",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "ellipsis-right",
+    totalPages,
+  ] as const;
 }
 
 // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
@@ -866,6 +921,19 @@ function TopLoadingBar({ isBusy }: { isBusy: boolean }) {
       />
     </div>
   );
+}
+
+// Mengubah durasi milidetik menjadi tampilan yang lebih mudah dibaca mahasiswa.
+function formatLoadDuration(durationMs: number) {
+  if (durationMs < 1000) {
+    return `${Math.round(durationMs)} ms`;
+  }
+
+  if (durationMs < 60000) {
+    return `${(durationMs / 1000).toFixed(2)} s`;
+  }
+
+  return `${(durationMs / 60000).toFixed(2)} menit`;
 }
 
 // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
@@ -893,7 +961,11 @@ function ActionButton({
       }`}
       onClick={onClick}
     >
-      {loading ? <Spinner /> : <span className="text-base leading-none">{icon}</span>}
+      {loading ? (
+        <Spinner />
+      ) : (
+        <span className="text-base leading-none">{icon}</span>
+      )}
       {label}
     </button>
   );
@@ -922,7 +994,9 @@ function MetricCard({
       <p className="mt-2 text-2xl font-semibold text-gray-800 dark:text-white/90">
         {value}
       </p>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        {subtitle}
+      </p>
     </div>
   );
 }
@@ -939,11 +1013,15 @@ function ComplexityBox({
 }) {
   return (
     <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-      <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{title}</p>
+      <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+        {title}
+      </p>
       <p className="mt-2 text-lg font-semibold text-brand-600 dark:text-brand-400">
         {value}
       </p>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{description}</p>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        {description}
+      </p>
     </div>
   );
 }
