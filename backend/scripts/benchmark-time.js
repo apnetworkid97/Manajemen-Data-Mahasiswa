@@ -76,7 +76,7 @@ function avgMs(fn, repeat = 3) {
 }
 
 function runBenchmark() {
-  const sizes = [100, 1000, 3000];
+  const sizes = [100, 1000, 3000,10000];
   const rows = [];
 
   sizes.forEach((n) => {

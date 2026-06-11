@@ -525,15 +525,23 @@ export default function StudentManagerView({
                   ))}
                 </TableRow>
               </TableHeader>
+              
               <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.05]">
-                {paginatedStudents.length === 0 ? (
+              {loading || isPending ? (
+                <TableRow>
+                  <TableCell
+                    className="px-5 py-8 text-center text-sm text-gray-500"
+                    colSpan={canDelete ? 8 : 7}
+                  >
+                    <Spinner /> Memuat data...
+                  </TableCell>
+                </TableRow>
+              ) : paginatedStudents.length === 0 ? (
                   <TableRow>
                     <TableCell
                       className="px-5 py-8 text-sm text-gray-500"
                       colSpan={canDelete ? 8 : 7}
-                    >
-                      Tidak ada data mahasiswa yang cocok dengan filter saat
-                      ini.
+                    >Tidak ada data mahasiswa yang cocok dengan filter saatini.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -607,6 +615,7 @@ export default function StudentManagerView({
                     </TableRow>
                   ))
                 )}
+                
               </TableBody>
             </Table>
           </div>
