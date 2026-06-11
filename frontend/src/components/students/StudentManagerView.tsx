@@ -533,7 +533,7 @@ export default function StudentManagerView({
                     className="px-5 py-8 text-center text-sm text-gray-500"
                     colSpan={canDelete ? 8 : 7}
                   >
-                    <Spinner /> Memuat data...
+                    <Spinner />  Memuat data...
                   </TableCell>
                 </TableRow>
               ) : paginatedStudents.length === 0 ? (
