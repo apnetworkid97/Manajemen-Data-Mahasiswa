@@ -8,9 +8,9 @@ const nextBin = path.join(__dirname, "..", "node_modules", "next", "dist", "bin"
 const args = [nextBin, command, ...extraArgs];
 
 // Next.js 16 default ke Turbopack. Project ini masih pakai custom webpack config.
-if ((command === "dev" || command === "build") && !args.includes("--webpack")) {
-  args.push("--webpack");
-}
+// if ((command === "dev" || command === "build") && !args.includes("--webpack")) {
+//   args.push("--webpack");
+// }
 
 const child = spawn(process.execPath, args, {
   stdio: "inherit",

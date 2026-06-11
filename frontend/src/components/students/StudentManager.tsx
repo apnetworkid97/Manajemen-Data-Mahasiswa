@@ -73,6 +73,10 @@ const initialMeta: StudentMeta = {
     crudAccess: "O(n)",
     exportImport: "O(n)",
   },
+  executionTime: {
+    search: 0,
+    sort: 0,
+  },
 };
 
 const nimRegex = /^\d{12}$/;
@@ -243,11 +247,6 @@ export default function StudentManager() {
           `${API_BASE_URL}/api/students?${params.toString()}`,
         );
         const result = await response.json();
-
-        // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
-        if (!response.ok) {
-          throw new Error(result.message || "Gagal mengambil data mahasiswa.");
-        }
 
         setStudents(result.data);
         setMeta(result.meta);

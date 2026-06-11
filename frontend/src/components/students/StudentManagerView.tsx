@@ -140,6 +140,42 @@ interface StudentManagerViewProps {
   handleImportSubmit: () => void;
   downloadImportTemplate: (format: "csv" | "json") => void;
 }
+//Fungsi Menghitung time complexity
+// function estimateTimeMs(complexity: string, n: number): number {
+//   const operationCost = 0.000001; // ms per operasi
+//   let operations = 0;
+
+//   switch (complexity) {
+//     case "O(1)":
+//       operations = 1;
+//       break;
+
+//     case "O(log n)":
+//       operations = Math.log2(n);
+//       break;
+
+//     case "O(n)":
+//       operations = n;
+//       break;
+
+//     case "O(n log n)":
+//       operations = n * Math.log2(n);
+//       break;
+
+//     case "O(n^2)":
+//       operations = n * n;
+//       break;
+
+//     case "O(n^3)":
+//       operations = n * n * n;
+//       break;
+
+//     default:
+//       return 0;
+//   }
+
+//   return operations * operationCost;
+// }
 
 // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
 export default function StudentManagerView({
@@ -645,7 +681,7 @@ export default function StudentManagerView({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ComplexityBox
           title="Pencarian"
           value={meta.complexity.search}
@@ -666,7 +702,7 @@ export default function StudentManagerView({
           value={meta.complexity.exportImport}
           description="Proses file dibaca per elemen data."
         />
-      </div>
+      </div> */}
 
       <Modal
         isOpen={isModalOpen}
