@@ -36,7 +36,7 @@ const baseNavItems: NavItem[] = [
   {
     name: "Data Mahasiswa",
     icon: <TableIcon />,
-    path: "/data-tables",
+    path: "/data-mahasiswa",
   },
 ];
 
@@ -45,7 +45,7 @@ const othersItems: NavItem[] = [];
 const supportItems: NavItem[] = [];
 
 const AppSidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { isExpanded, isMobileOpen, isHovered,closeMobileSidebar, setIsHovered } = useSidebar();
   const pathname = usePathname();
   const [currentRole, setCurrentRole] = useState<UserRole>("viewer");
 
@@ -119,6 +119,9 @@ const AppSidebar: React.FC = () => {
             nav.path && (
               <Link
                 href={nav.path}
+                onClick={() => {
+    closeMobileSidebar();
+  }}
                 className={`menu-item group ${
                   isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"
                 }`}
@@ -156,6 +159,9 @@ const AppSidebar: React.FC = () => {
                   <li key={subItem.name}>
                     <Link
                       href={subItem.path}
+                      onClick={() => {
+    closeMobileSidebar();
+  }}
                       className={`menu-dropdown-item ${
                         isActive(subItem.path)
                           ? "menu-dropdown-item-active"
@@ -297,29 +303,38 @@ const AppSidebar: React.FC = () => {
           {isExpanded || isHovered || isMobileOpen ? (
             <>
               <Image
+              onClick={() => {
+    closeMobileSidebar();
+  }}
                 className="dark:hidden"
                 src="/images/logo/logo.svg"
                 alt="Logo"
-                width={96}
-                height={72}
+                width={300}
+                height={300}
                 loading="eager"
               />
               <Image
+              onClick={() => {
+    closeMobileSidebar();
+  }}
                 className="hidden dark:block"
                 src="/images/logo/logo-dark.svg"
                 alt="Logo"
-                width={96}
-                height={72}
+                width={300}
+                height={300}
                 loading="eager"
               />
             </>
           ) : (
             <Image
+            onClick={() => {
+    closeMobileSidebar();
+  }}
               src="/images/logo/logo-icon.svg"
               alt="Logo"
-              width={32}
+              width={100}
               height={32}
-              style={{ width: "32px", height: "32px" }}
+              style={{ width: "100px", height: "32px" }}
             />
           )}
         </Link>

@@ -9,6 +9,7 @@ type SidebarContextType = {
   openSubmenu: string | null;
   toggleSidebar: () => void;
   toggleMobileSidebar: () => void;
+  closeMobileSidebar: () => void;
   setIsHovered: (isHovered: boolean) => void;
   setActiveItem: (item: string | null) => void;
   toggleSubmenu: (item: string) => void;
@@ -64,7 +65,9 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
   const toggleMobileSidebar = () => {
     setIsMobileOpen((prev) => !prev);
   };
-
+  const closeMobileSidebar = () => {
+  setIsMobileOpen(false);
+};
   // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
   const toggleSubmenu = (item: string) => {
     setOpenSubmenu((prev) => (prev === item ? null : item));
@@ -80,6 +83,7 @@ export const SidebarProvider: React.FC<{ children: React.ReactNode }> = ({
         openSubmenu,
         toggleSidebar,
         toggleMobileSidebar,
+        closeMobileSidebar,
         setIsHovered,
         setActiveItem,
         toggleSubmenu,

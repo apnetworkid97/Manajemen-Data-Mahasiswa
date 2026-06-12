@@ -82,7 +82,7 @@ export default function BerandaDashboard() {
         </h3>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
-            href="/data-tables"
+            href="/data-mahasiswa"
             className="rounded-xl bg-brand-500 px-5 py-3 text-sm font-medium text-white hover:bg-brand-600"
           >
             Buka Data Mahasiswa

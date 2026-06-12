@@ -140,44 +140,7 @@ interface StudentManagerViewProps {
   handleImportSubmit: () => void;
   downloadImportTemplate: (format: "csv" | "json") => void;
 }
-//Fungsi Menghitung time complexity
-// function estimateTimeMs(complexity: string, n: number): number {
-//   const operationCost = 0.000001; // ms per operasi
-//   let operations = 0;
 
-//   switch (complexity) {
-//     case "O(1)":
-//       operations = 1;
-//       break;
-
-//     case "O(log n)":
-//       operations = Math.log2(n);
-//       break;
-
-//     case "O(n)":
-//       operations = n;
-//       break;
-
-//     case "O(n log n)":
-//       operations = n * Math.log2(n);
-//       break;
-
-//     case "O(n^2)":
-//       operations = n * n;
-//       break;
-
-//     case "O(n^3)":
-//       operations = n * n * n;
-//       break;
-
-//     default:
-//       return 0;
-//   }
-
-//   return operations * operationCost;
-// }
-
-// Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
 export default function StudentManagerView({
   isBusy,
   loading,
@@ -292,7 +255,7 @@ export default function StudentManagerView({
           <div className="flex flex-wrap gap-3">
             {canCreate ? (
               <ActionButton
-                label="Add Item"
+                label="Add Student"
                 icon="+"
                 variant="primary"
                 loading={busyAction === "submit" && isModalOpen}
@@ -541,7 +504,7 @@ export default function StudentManagerView({
                     <TableCell
                       className="px-5 py-8 text-sm text-gray-500"
                       colSpan={canDelete ? 8 : 7}
-                    >Tidak ada data mahasiswa yang cocok dengan filter saatini.
+                    >Tidak ada data mahasiswa yang cocok dengan filter saat ini.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -667,7 +630,7 @@ export default function StudentManagerView({
                         ? "bg-brand-500 text-white"
                         : "border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-white/5"
                     }`}
-                    onClick={() => onPageChange(page)}
+                    onClick={() => typeof page === "number" && onPageChange(page)}
                   >
                     {page}
                   </button>
@@ -713,9 +676,10 @@ export default function StudentManagerView({
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
-        className="m-4 max-w-[760px]"
+        className="m-4 max-w-[760px] max-h-[90vh] overflow-y-auto"
       >
-        <div className="p-6 sm:p-8">
+        <div className="flex max-h-[90vh] flex-col">
+    <div className="p-6 sm:p-8 overflow-y-auto">
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white/90">
               {modalMode === "edit"
@@ -830,6 +794,7 @@ export default function StudentManagerView({
             </div>
           </form>
         </div>
+        </div>
       </Modal>
 
       <Modal
@@ -917,42 +882,42 @@ export default function StudentManagerView({
   );
 }
 
-// Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
-function getVisiblePages(currentPage: number, totalPages: number) {
-  // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
-  if (totalPages <= 5) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
+// Pagination.
+function getVisiblePages(
+  currentPage: number,
+  totalPages: number,
+){
+  const pages: (number | string)[] = [];
+
+  // Selalu tampilkan halaman pertama
+  pages.push(1);
+
+  // Jika bukan halaman pertama atau terakhir
+  if (currentPage >= 2 && currentPage <= totalPages - 1) {
+    pages.push("ellipsis-left");
+    pages.push(currentPage);
+    pages.push("ellipsis-right");
   }
 
-  // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
-  if (currentPage <= 3) {
-    return [1, 2, 3, 4, "ellipsis-right", totalPages] as const;
+  // Jika mendekati halaman terakhir
+  else if (currentPage >= totalPages - 1 && totalPages > 2) {
+    pages.push("ellipsis-left");
   }
 
-  // Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
-  if (currentPage >= totalPages - 2) {
-    return [
-      1,
-      "ellipsis-left",
-      totalPages - 3,
-      totalPages - 2,
-      totalPages - 1,
-      totalPages,
-    ] as const;
+  // Jika mendekati halaman awal
+  else if (currentPage <= 2 && totalPages > 2) {
+    pages.push("ellipsis-right");
   }
 
-  return [
-    1,
-    "ellipsis-left",
-    currentPage - 1,
-    currentPage,
-    currentPage + 1,
-    "ellipsis-right",
-    totalPages,
-  ] as const;
+  // Selalu tampilkan halaman terakhir jika > 1
+  if (totalPages > 1) {
+    pages.push(totalPages);
+  }
+
+  return pages;
 }
 
-// Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
+
 function TopLoadingBar({ isBusy }: { isBusy: boolean }) {
   return (
     <div className="pointer-events-none fixed left-0 right-0 top-0 z-[1000001] h-1 bg-transparent">
@@ -978,7 +943,7 @@ function formatLoadDuration(durationMs: number) {
   return `${(durationMs / 60000).toFixed(2)} menit`;
 }
 
-// Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
+
 function ActionButton({
   label,
   icon,
@@ -1013,14 +978,14 @@ function ActionButton({
   );
 }
 
-// Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
+
 function Spinner() {
   return (
     <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
   );
 }
 
-// Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
+
 function MetricCard({
   title,
   value,
@@ -1043,7 +1008,7 @@ function MetricCard({
   );
 }
 
-// Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
+
 function Field({
   label,
   value,
@@ -1080,7 +1045,7 @@ function Field({
   );
 }
 
-// Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
+
 function SelectField({
   label,
   value,
@@ -1112,7 +1077,7 @@ function SelectField({
   );
 }
 
-// Fungsi ini digunakan untuk menangani proses sesuai nama dan konteks pemanggilannya.
+
 function StudyProgramSelectField({
   label,
   value,
